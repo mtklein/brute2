@@ -26,9 +26,10 @@ static float*  one(float* sp) {                             *sp++ =   1;        
 static bool eval(Word* words[], const float init[], const int ninit
                               , const float goal[], const int ngoal) {
     float stack[1024*1024] = {0};
-    memcpy(stack + len(stack)/2, init, sizeof(*init) * (size_t)ninit);
+    float* const middle = stack + len(stack)/2;
+    memcpy(middle, init, sizeof(*init) * (size_t)ninit);
 
-    float* sp = stack + len(stack)/2 + ninit;
+    float* sp = middle + ninit;
     for (Word* word; (word = *words++); sp = word(sp));
 
     for (const float* gp = goal + ngoal; gp != goal; ) {
@@ -36,7 +37,7 @@ static bool eval(Word* words[], const float init[], const int ninit
             return false;
         }
     }
-    return true;
+    return sp == middle;
 }
 
 static bool search(Word*       dict[], const int ndict,
@@ -66,7 +67,8 @@ static bool search(Word*       dict[], const int ndict,
 }
 
 static bool search_and_display(const float init[], const int ninit,
-                               const float goal[], const int ngoal) {
+                               const float goal[], const int ngoal,
+                               Word*   expected[]) {
     Word* dict[] = { NULL, mul, sub, add, div, dup, swap, zero, one };
     Word* words[16];
 
@@ -75,6 +77,12 @@ static bool search_and_display(const float init[], const int ninit,
                      goal, ngoal,
                     words, len(words));
     if (ok) {
+        for (Word* *word = words; *word; word++) {
+            if (*word != *expected++) {
+                return false;
+            }
+        }
+
         for (Word* *word = words; *word; word++) {
             void* addr = (void*)*word;
             Dl_info info;
@@ -85,6 +93,7 @@ static bool search_and_display(const float init[], const int ninit,
             }
         }
         printf("\n");
+
         return true;
     }
     return false;
@@ -92,39 +101,46 @@ static bool search_and_display(const float init[], const int ninit,
 
 
 int main(void) {
-    {   // add
+    {
         float init[] = {2,3,4}, goal[]={2,7};
-        if (!search_and_display(init,len(init), goal,len(goal))) { return 1; }
+        Word* want[] = {add};
+        if (!search_and_display(init,len(init), goal,len(goal), want)) { return 1; }
     }
 
-    {   // mul add
+    {
         float init[] = {1,2,3}, goal[]={7};
-        if (!search_and_display(init,len(init), goal,len(goal))) { return 1; }
+        Word* want[] = {mul,add};
+        if (!search_and_display(init,len(init), goal,len(goal), want)) { return 1; }
     }
 
-    {   // dup add
+    {
         float init[] = {3}, goal[]={6};
-        if (!search_and_display(init,len(init), goal,len(goal))) { return 1; }
+        Word* want[] = {dup,add};
+        if (!search_and_display(init,len(init), goal,len(goal), want)) { return 1; }
     }
 
-    {   // dup mul
+    {
         float init[] = {3}, goal[]={9};
-        if (!search_and_display(init,len(init), goal,len(goal))) { return 1; }
+        Word* want[] = {dup,mul};
+        if (!search_and_display(init,len(init), goal,len(goal), want)) { return 1; }
     }
 
-    {   // dup div; one  (TODO: stack is left {3,1} here)
+    {
         float init[] = {3}, goal[]={1};
-        if (!search_and_display(init,len(init), goal,len(goal))) { return 1; }
+        Word* want[] = {dup,div};
+        if (!search_and_display(init,len(init), goal,len(goal), want)) { return 1; }
     }
 
-    {   // dup dup div; one
+    {
         float init[] = {3}, goal[]={3,1};
-        if (!search_and_display(init,len(init), goal,len(goal))) { return 1; }
+        Word* want[] = {one};
+        if (!search_and_display(init,len(init), goal,len(goal), want)) { return 1; }
     }
 
-    {   // dup dup div div; one div
+    {
         float init[] = {3}, goal[]={1/3.0f};
-        if (!search_and_display(init,len(init), goal,len(goal))) { return 1; }
+        Word* want[] = {one,div};
+        if (!search_and_display(init,len(init), goal,len(goal), want)) { return 1; }
     }
 
     return 0;
