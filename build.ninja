@@ -4,7 +4,7 @@ cc   = clang -Weverything -Wno-poison-system-directories
 asan = $cc -fsanitize=address,integer,undefined
 
 rule compile
-    command = $cc -Os -Werror -std=c99 -MD -MF $out.d -c $in -o $out
+    command = $cc -g -Os -Werror -std=c99 -MD -MF $out.d -c $in -o $out
     depfile = $out.d
     deps    = gcc
 

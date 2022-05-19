@@ -26,19 +26,23 @@ static float*  inv(float* sp) { float x = *--sp;            *sp++ = 1/x;        
 
 static bool eval(Word* words[], const float init[], const int ninit
                               , const float goal[], const int ngoal) {
-    float stack[1024*1024] = {0};
-    float* const middle = stack + len(stack)/2;
-    memcpy(middle, init, sizeof(*init) * (size_t)ninit);
+    float stack[64] = {0};
+    float* const start = stack + 2;
+    memcpy(start, init, sizeof(*init) * (size_t)ninit);
 
-    float* sp = middle + ninit;
-    for (Word* word; (word = *words++); sp = word(sp));
+    float* sp = start + ninit;
+    for (Word* word; (word = *words++); sp = word(sp)) {
+        if (sp < start || sp > stack+len(stack)) {
+            return false;
+        }
+    }
 
     for (const float* gp = goal + ngoal; gp != goal; ) {
         if (!equiv(*--sp, *--gp)) {
             return false;
         }
     }
-    return sp == middle;
+    return sp == start;
 }
 
 static bool search(Word*       dict[], const int ndict,
