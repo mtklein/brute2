@@ -23,15 +23,15 @@ static float* swap(float* sp) { float x = *--sp, y = *--sp; *sp++ =   x; *sp++ =
 static float* zero(float* sp) {                             *sp++ =   0;            return sp; }
 static float*  one(float* sp) {                             *sp++ =   1;            return sp; }
 
-static bool eval(Word* words[], const float init[], int ninit
-                              , const float goal[], int ngoal) {
+static bool eval(Word* words[], const float init[], const int ninit
+                              , const float goal[], const int ngoal) {
     float stack[1024*1024] = {0};
     memcpy(stack + len(stack)/2, init, sizeof(*init) * (size_t)ninit);
 
     float* sp = stack + len(stack)/2 + ninit;
     for (Word* word; (word = *words++); sp = word(sp));
 
-    for (const float* gp = goal + ngoal; ngoal --> 0;) {
+    for (const float* gp = goal + ngoal; gp != goal; ) {
         if (!equiv(*--sp, *--gp)) {
             return false;
         }
@@ -39,10 +39,10 @@ static bool eval(Word* words[], const float init[], int ninit
     return true;
 }
 
-static bool search(Word*       dict[], int ndict,
-                   const float init[], int ninit,
-                   const float goal[], int ngoal,
-                   Word*      words[], int nwords) {
+static bool search(Word*       dict[], const int ndict,
+                   const float init[], const int ninit,
+                   const float goal[], const int ngoal,
+                   Word*      words[], const int nwords) {
     const int max = nwords-1;
     words[max] = NULL;
 
@@ -65,8 +65,8 @@ static bool search(Word*       dict[], int ndict,
     return false;
 }
 
-static bool search_and_display(const float init[], int ninit,
-                               const float goal[], int ngoal) {
+static bool search_and_display(const float init[], const int ninit,
+                               const float goal[], const int ngoal) {
     Word* dict[] = { NULL, mul, sub, add, div, dup, swap, zero, one };
     Word* words[16];
 
