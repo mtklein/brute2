@@ -3,7 +3,6 @@
 #include <stddef.h>
 #include <stdint.h>
 #include <stdio.h>
-#include <string.h>
 
 #define len(arr) (sizeof(arr) / sizeof(*arr))
 
@@ -24,20 +23,23 @@ static float* zero(float* sp) {                             *sp++ =   0;        
 static float*  one(float* sp) {                             *sp++ =   1;            return sp; }
 static float*  inv(float* sp) { float x = *--sp;            *sp++ = 1/x;            return sp; }
 
-static bool eval(Word* words[], const float init[], const int ninit
-                              , const float goal[], const int ngoal) {
+static bool eval(Word* words[], const float init[], int ninit
+                              , const float goal[], int ngoal) {
     float stack[64] = {0};
     float* const start = stack + 2;
-    memcpy(start, init, sizeof(*init) * (size_t)ninit);
 
-    float* sp = start + ninit;
+    float* sp = start;
+    while (ninit --> 0) {
+        *sp++ = *init++;
+    }
+
     for (Word* word; (word = *words++); sp = word(sp)) {
         if (sp < start || sp > stack+len(stack)) {
             return false;
         }
     }
 
-    for (const float* gp = goal + ngoal; gp != goal; ) {
+    for (const float* gp = goal + ngoal; ngoal --> 0;) {
         if (!equiv(*--sp, *--gp)) {
             return false;
         }
