@@ -153,5 +153,17 @@ int main(void) {
         if (!search_and_display(init,len(init), goal,len(goal), want)) { return 1; }
     }
 
+    {
+        float goal[]={2};
+        Word* want[] = {one,dup,add};
+        if (!search_and_display(goal,0, goal,len(goal), want)) { return 1; }
+    }
+
+    {
+        float goal[]={0.5};
+        Word* want[] = {one,dup,add,inv};
+        if (!search_and_display(goal,0, goal,len(goal), want)) { return 1; }
+    }
+
     return 0;
 }
