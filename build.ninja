@@ -1,0 +1,18 @@
+builddir = out
+
+cc = clang -Weverything -Wno-poison-system-directories
+
+rule compile
+    command = $cc -Os -Werror -std=c99 -MD -MF $out.d -c $in -o $out
+    depfile = $out.d
+    deps    = gcc
+
+rule link
+    command = $cc $in -o $out
+
+rule run
+    command = ./$in > $out
+
+build out/brute.o:  compile  brute.c
+build out/brute:    link out/brute.o
+build out/brute.ok: run  out/brute
