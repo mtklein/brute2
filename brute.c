@@ -22,6 +22,7 @@ static float*  dup(float* sp) { float x = *--sp;            *sp++ =   x; *sp++ =
 static float* swap(float* sp) { float x = *--sp, y = *--sp; *sp++ =   x; *sp++ = y; return sp; }
 static float* zero(float* sp) {                             *sp++ =   0;            return sp; }
 static float*  one(float* sp) {                             *sp++ =   1;            return sp; }
+static float*  inv(float* sp) { float x = *--sp;            *sp++ = 1/x;            return sp; }
 
 static bool eval(Word* words[], const float init[], const int ninit
                               , const float goal[], const int ngoal) {
@@ -69,7 +70,7 @@ static bool search(Word*       dict[], const int ndict,
 static bool search_and_display(const float init[], const int ninit,
                                const float goal[], const int ngoal,
                                Word*   expected[]) {
-    Word* dict[] = { NULL, mul, sub, add, div, dup, swap, zero, one };
+    Word* dict[] = { NULL, mul, sub, add, div, dup, swap, zero, one, inv };
     Word* words[16];
 
     bool ok = search(dict, len(dict),
@@ -139,7 +140,7 @@ int main(void) {
 
     {
         float init[] = {3}, goal[]={1/3.0f};
-        Word* want[] = {one,div};
+        Word* want[] = {inv};
         if (!search_and_display(init,len(init), goal,len(goal), want)) { return 1; }
     }
 
