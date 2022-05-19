@@ -1,6 +1,7 @@
 builddir = out
 
-cc = clang -Weverything -Wno-poison-system-directories
+cc   = clang -Weverything -Wno-poison-system-directories
+asan = $cc -fsanitize=address,integer,undefined
 
 rule compile
     command = $cc -Os -Werror -std=c99 -MD -MF $out.d -c $in -o $out
@@ -16,3 +17,10 @@ rule run
 build out/brute.o:  compile  brute.c
 build out/brute:    link out/brute.o
 build out/brute.ok: run  out/brute
+
+build out/asan.o:  compile brute.c
+    cc = $asan
+build out/asan:    link out/asan.o
+    cc = $asan
+build out/asan.ok: run out/asan
+    cc = $asan
