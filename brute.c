@@ -121,61 +121,63 @@ static bool test(float const init[], float const *iend,
     return true;
 }
 
+#define expect(...) \
+    if (!test(init,init+len(init), goal,goal+len(goal), (Word[]){__VA_ARGS__})) return 1
 
 int main(void) {
     {
         float init[] = {2,3,4}, goal[]={2,7};
-        if (!test(init,init+len(init), goal,goal+len(goal), (Word[]){add})) { return 1; }
+        expect(add);
     }
 
     {
         float init[] = {1,2,3}, goal[]={7};
-        if (!test(init,init+len(init), goal,goal+len(goal), (Word[]){mul,add})) { return 1; }
+        expect(mul,add);
     }
 
     {
         float init[] = {3}, goal[]={6};
-        if (!test(init,init+len(init), goal,goal+len(goal), (Word[]){dup,add})) { return 1; }
+        expect(dup,add);
     }
 
     {
         float init[] = {3}, goal[]={9};
-        if (!test(init,init+len(init), goal,goal+len(goal), (Word[]){dup,mul})) { return 1; }
+        expect(dup,mul);
     }
 
     {   // TODO: this is making use of the zeros before the start of the stack
         float init[] = {3}, goal[]={1};
-        if (!test(init,init+len(init), goal,goal+len(goal), (Word[]){mul,one})) { return 1; }
+        expect(mul,one);
     }
 
     {
         float init[] = {3}, goal[]={3,1};
-        if (!test(init,init+len(init), goal,goal+len(goal), (Word[]){one})) { return 1; }
+        expect(one);
     }
 
     {
         float init[] = {3}, goal[]={1/3.0f};
-        if (!test(init,init+len(init), goal,goal+len(goal), (Word[]){inv})) { return 1; }
+        expect(inv);
     }
 
     {
         float init[] = {3}, goal[]={2/3.0f};
-        if (!test(init,init+len(init), goal,goal+len(goal), (Word[]){inv,dup,add})) { return 1; }
+        expect(inv,dup,add);
     }
 
     {
-        float goal[] = {2};
-        if (!test(NULL,NULL, goal,goal+len(goal), (Word[]){one,dup,add})) { return 1; }
+        float init[] = {42}, goal[] = {42,2};
+        expect(one,dup,add);
     }
 
     {
-        float goal[] = {0.5};
-        if (!test(NULL,NULL, goal,goal+len(goal), (Word[]){one,dup,add,inv})) { return 1; }
+        float init[] = {42}, goal[] = {42,0.5};
+        expect(one,dup,add,inv);
     }
 
     {
-        float goal[] = {0.25};
-        if (!test(NULL,NULL, goal,goal+len(goal), (Word[]){one,dup,add,dup,mul,inv})) { return 1; }
+        float init[] = {42}, goal[] = {42,0.25};
+        expect(one,dup,add,dup,mul,inv);
     }
 
     return 0;
