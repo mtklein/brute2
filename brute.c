@@ -47,7 +47,7 @@ static bool eval(Word word[], const float init[], int ninit
     return sp == start;
 }
 
-static bool search(Word        dict[], const int ndict,
+static bool search(const Word  dict[], const int ndict,
                    const float init[], const int ninit,
                    const float goal[], const int ngoal,
                    Word        word[], const int nword) {
@@ -73,102 +73,95 @@ static bool search(Word        dict[], const int ndict,
     return false;
 }
 
-static bool search_and_display(const float init[], const int ninit,
-                               const float goal[], const int ngoal,
-                               Word        want[]) {
-    Word dict[] = { NULL, mul, sub, add, div, dup, swap, zero, one, inv };
+static bool test(const float init[], const int ninit,
+                 const float goal[], const int ngoal,
+                 const Word  want[]) {
+    const Word dict[] = { NULL, mul, sub, add, div, dup, swap, zero, one, inv };
     Word word[16];
 
-    bool ok = search(dict, len(dict),
-                     init, ninit,
-                     goal, ngoal,
-                     word, len(word));
-    if (ok) {
-        if (want) {
-            for (Word* w = word; *w; w++) {
-                if (*w != *want++) {
-                    return false;
-                }
-            }
-        }
-
-        FILE* const out = want ? stdout : stderr;
-        for (Word* w = word; *w; w++) {
-            void* addr = (void*)*w;
-            Dl_info info;
-            if (dladdr(addr, &info) && addr == info.dli_saddr) {
-                fprintf(out, "%s ", info.dli_sname);
-            } else {
-                fprintf(out, "%p ", addr);
-            }
-        }
-        fprintf(out, "\n");
-
-        return true;
+    if (!search(dict, len(dict),
+                init, ninit,
+                goal, ngoal,
+                word, len(word))) {
+        return false;
     }
-    return false;
+
+    for (const Word* w = word; want && *w;) {
+        if (*w++ != *want++) {
+            return false;
+        }
+    }
+
+    FILE* const out = want ? stdout : stderr;
+    for (Word* w = word; *w; w++) {
+        void* addr = (void*)*w;
+        Dl_info info;
+        if (dladdr(addr, &info) && addr == info.dli_saddr) {
+            fprintf(out, "%s ", info.dli_sname);
+        } else {
+            fprintf(out, "%p ", addr);
+        }
+    }
+    fprintf(out, "\n");
+
+    return true;
 }
 
 
 int main(void) {
     {
         float init[] = {2,3,4}, goal[]={2,7};
-        Word  want[] = {add};
-        if (!search_and_display(init,len(init), goal,len(goal), want)) { return 1; }
+        if (!test(init,len(init), goal,len(goal), (Word[]){add})) { return 1; }
     }
 
     {
         float init[] = {1,2,3}, goal[]={7};
-        Word  want[] = {mul,add};
-        if (!search_and_display(init,len(init), goal,len(goal), want)) { return 1; }
+        if (!test(init,len(init), goal,len(goal), (Word[]){mul,add})) { return 1; }
     }
 
     {
         float init[] = {3}, goal[]={6};
-        Word  want[] = {dup,add};
-        if (!search_and_display(init,len(init), goal,len(goal), want)) { return 1; }
+        if (!test(init,len(init), goal,len(goal), (Word[]){dup,add})) { return 1; }
     }
 
     {
         float init[] = {3}, goal[]={9};
-        Word  want[] = {dup,mul};
-        if (!search_and_display(init,len(init), goal,len(goal), want)) { return 1; }
+        if (!test(init,len(init), goal,len(goal), (Word[]){dup,mul})) { return 1; }
     }
 
     {
         float init[] = {3}, goal[]={1};
-        Word  want[] = {dup,div};
-        if (!search_and_display(init,len(init), goal,len(goal), want)) { return 1; }
+        if (!test(init,len(init), goal,len(goal), (Word[]){dup,div})) { return 1; }
     }
 
     {
         float init[] = {3}, goal[]={3,1};
-        Word  want[] = {one};
-        if (!search_and_display(init,len(init), goal,len(goal), want)) { return 1; }
+        if (!test(init,len(init), goal,len(goal), (Word[]){one})) { return 1; }
     }
 
     {
         float init[] = {3}, goal[]={1/3.0f};
-        Word  want[] = {inv};
-        if (!search_and_display(init,len(init), goal,len(goal), want)) { return 1; }
+        if (!test(init,len(init), goal,len(goal), (Word[]){inv})) { return 1; }
     }
 
     {
         float init[] = {3}, goal[]={2/3.0f};
-        Word  want[] = {inv,dup,add};
-        if (!search_and_display(init,len(init), goal,len(goal), want)) { return 1; }
+        if (!test(init,len(init), goal,len(goal), (Word[]){inv,dup,add})) { return 1; }
     }
 
     {
         float goal[] = {2};
-        Word  want[] = {one,dup,add};
-        if (!search_and_display(NULL,0, goal,len(goal), want)) { return 1; }
+        if (!test(NULL,0, goal,len(goal), (Word[]){one,dup,add})) { return 1; }
     }
 
     {
         float goal[] = {0.5};
-        Word  want[] = {one,dup,add,inv};
-        if (!search_and_display(NULL,0, goal,len(goal), want)) { return 1; }
+        if (!test(NULL,0, goal,len(goal), (Word[]){one,dup,add,inv})) { return 1; }
+    }
+
+    {
+        float goal[] = {0.25};
+        if (!test(NULL,0, goal,len(goal), (Word[]){one,dup,add,inv,dup,mul})) { return 1; }
     }
 
     return 0;
