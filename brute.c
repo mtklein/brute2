@@ -13,22 +13,22 @@ static bool equiv(float x, float y) {
 
 typedef float* (*Word)(float*);
 
-static float*  add(float* sp) { float x = *--sp, y = *--sp; *sp++ = x+y;            return sp; }
-static float*  sub(float* sp) { float x = *--sp, y = *--sp; *sp++ = x-y;            return sp; }
-static float*  mul(float* sp) { float x = *--sp, y = *--sp; *sp++ = x*y;            return sp; }
-static float*  div(float* sp) { float x = *--sp, y = *--sp; *sp++ = x/y;            return sp; }
-static float*  dup(float* sp) { float x = *--sp;            *sp++ =   x; *sp++ = x; return sp; }
-static float* swap(float* sp) { float x = *--sp, y = *--sp; *sp++ =   x; *sp++ = y; return sp; }
-static float* zero(float* sp) {                             *sp++ =   0;            return sp; }
-static float*  one(float* sp) {                             *sp++ =   1;            return sp; }
-static float*  inv(float* sp) { float x = *--sp;            *sp++ = 1/x;            return sp; }
+static float*  add(float *sp) { float x = *--sp, y = *--sp; *sp++ = x+y;            return sp; }
+static float*  sub(float *sp) { float x = *--sp, y = *--sp; *sp++ = x-y;            return sp; }
+static float*  mul(float *sp) { float x = *--sp, y = *--sp; *sp++ = x*y;            return sp; }
+static float*  div(float *sp) { float x = *--sp, y = *--sp; *sp++ = x/y;            return sp; }
+static float*  dup(float *sp) { float x = *--sp;            *sp++ =   x; *sp++ = x; return sp; }
+static float* swap(float *sp) { float x = *--sp, y = *--sp; *sp++ =   x; *sp++ = y; return sp; }
+static float* zero(float *sp) {                             *sp++ =   0;            return sp; }
+static float*  one(float *sp) {                             *sp++ =   1;            return sp; }
+static float*  inv(float *sp) { float x = *--sp;            *sp++ = 1/x;            return sp; }
 
-static bool eval(Word word[], const float init[], int ninit
-                            , const float goal[], int ngoal) {
+static bool eval(Word word[], float const init[], int ninit
+                            , float const goal[], int ngoal) {
     float stack[64] = {0};
     float* const start = stack + 2;
 
-    float* sp = start;
+    float *sp = start;
     while (ninit --> 0) {
         *sp++ = *init++;
     }
@@ -39,7 +39,7 @@ static bool eval(Word word[], const float init[], int ninit
         }
     }
 
-    for (const float* gp = goal + ngoal; ngoal --> 0;) {
+    for (float const *gp = goal + ngoal; ngoal --> 0;) {
         if (!equiv(*--sp, *--gp)) {
             return false;
         }
@@ -47,12 +47,14 @@ static bool eval(Word word[], const float init[], int ninit
     return sp == start;
 }
 
-static bool search(const Word  dict[], const int ndict,
-                   const float init[], const int ninit,
-                   const float goal[], const int ngoal,
-                   Word        word[], const int nword) {
-    const int max = nword-1;
-    word[max] = NULL;
+static bool search(Word  const dict[], int const ndict,
+                   float const init[], int const ninit,
+                   float const goal[], int const ngoal,
+                   Word        word[], int const nword) {
+    for (Word *w = word; w != word+nword;) {
+        *w++ = NULL;
+    }
+    int const max = nword-1;
 
     intmax_t limit = 1;
     for (int i = 0; i < max; i++) {
@@ -73,10 +75,10 @@ static bool search(const Word  dict[], const int ndict,
     return false;
 }
 
-static bool test(const float init[], const int ninit,
-                 const float goal[], const int ngoal,
-                 const Word  want[]) {
-    const Word dict[] = { NULL, mul, sub, add, div, dup, swap, zero, one, inv };
+static bool test(float const init[], int const ninit,
+                 float const goal[], int const ngoal,
+                 Word  const want[]) {
+    Word const dict[] = { NULL, mul, sub, add, div, dup, swap, zero, one, inv };
     Word word[16];
 
     if (!search(dict, len(dict),
@@ -86,15 +88,15 @@ static bool test(const float init[], const int ninit,
         return false;
     }
 
-    for (const Word* w = word; want && *w;) {
+    for (Word const *w = word; want && *w;) {
         if (*w++ != *want++) {
             return false;
         }
     }
 
     FILE* const out = want ? stdout : stderr;
-    for (Word* w = word; *w; w++) {
-        void* addr = (void*)*w;
+    for (Word *w = word; *w; w++) {
+        void *addr = (void*)*w;
         Dl_info info;
         if (dladdr(addr, &info) && addr == info.dli_saddr) {
             fprintf(out, "%s ", info.dli_sname);
