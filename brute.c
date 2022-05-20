@@ -11,7 +11,7 @@ static bool equiv(float x, float y) {
         || (x != x && y != y);
 }
 
-typedef float* Word(float*);
+typedef float* (*Word)(float*);
 
 static float*  add(float* sp) { float x = *--sp, y = *--sp; *sp++ = x+y;            return sp; }
 static float*  sub(float* sp) { float x = *--sp, y = *--sp; *sp++ = x-y;            return sp; }
@@ -23,7 +23,7 @@ static float* zero(float* sp) {                             *sp++ =   0;        
 static float*  one(float* sp) {                             *sp++ =   1;            return sp; }
 static float*  inv(float* sp) { float x = *--sp;            *sp++ = 1/x;            return sp; }
 
-static bool eval(Word* words[], const float init[], int ninit
+static bool eval(Word words[], const float init[], int ninit
                               , const float goal[], int ngoal) {
     float stack[64] = {0};
     float* const start = stack + 2;
@@ -33,7 +33,7 @@ static bool eval(Word* words[], const float init[], int ninit
         *sp++ = *init++;
     }
 
-    for (Word* word; (word = *words++); sp = word(sp)) {
+    for (Word word; (word = *words++); sp = word(sp)) {
         if (sp < start || sp > stack+len(stack)) {
             return false;
         }
@@ -47,10 +47,10 @@ static bool eval(Word* words[], const float init[], int ninit
     return sp == start;
 }
 
-static bool search(Word*       dict[], const int ndict,
+static bool search(Word        dict[], const int ndict,
                    const float init[], const int ninit,
                    const float goal[], const int ngoal,
-                   Word*      words[], const int nwords) {
+                   Word       words[], const int nwords) {
     const int max = nwords-1;
     words[max] = NULL;
 
@@ -75,9 +75,9 @@ static bool search(Word*       dict[], const int ndict,
 
 static bool search_and_display(const float init[], const int ninit,
                                const float goal[], const int ngoal,
-                               Word*       want[]) {
-    Word* dict[] = { NULL, mul, sub, add, div, dup, swap, zero, one, inv };
-    Word* words[16];
+                               Word        want[]) {
+    Word dict[] = { NULL, mul, sub, add, div, dup, swap, zero, one, inv };
+    Word words[16];
 
     bool ok = search(dict, len(dict),
                      init, ninit,
@@ -85,7 +85,7 @@ static bool search_and_display(const float init[], const int ninit,
                     words, len(words));
     if (ok) {
         if (want) {
-            for (Word* *word = words; *word; word++) {
+            for (Word* word = words; *word; word++) {
                 if (*word != *want++) {
                     return false;
                 }
@@ -93,7 +93,7 @@ static bool search_and_display(const float init[], const int ninit,
         }
 
         FILE* const out = want ? stdout : stderr;
-        for (Word* *word = words; *word; word++) {
+        for (Word* word = words; *word; word++) {
             void* addr = (void*)*word;
             Dl_info info;
             if (dladdr(addr, &info) && addr == info.dli_saddr) {
@@ -113,61 +113,61 @@ static bool search_and_display(const float init[], const int ninit,
 int main(void) {
     {
         float init[] = {2,3,4}, goal[]={2,7};
-        Word* want[] = {add};
+        Word  want[] = {add};
         if (!search_and_display(init,len(init), goal,len(goal), want)) { return 1; }
     }
 
     {
         float init[] = {1,2,3}, goal[]={7};
-        Word* want[] = {mul,add};
+        Word  want[] = {mul,add};
         if (!search_and_display(init,len(init), goal,len(goal), want)) { return 1; }
     }
 
     {
         float init[] = {3}, goal[]={6};
-        Word* want[] = {dup,add};
+        Word  want[] = {dup,add};
         if (!search_and_display(init,len(init), goal,len(goal), want)) { return 1; }
     }
 
     {
         float init[] = {3}, goal[]={9};
-        Word* want[] = {dup,mul};
+        Word  want[] = {dup,mul};
         if (!search_and_display(init,len(init), goal,len(goal), want)) { return 1; }
     }
 
     {
         float init[] = {3}, goal[]={1};
-        Word* want[] = {dup,div};
+        Word  want[] = {dup,div};
         if (!search_and_display(init,len(init), goal,len(goal), want)) { return 1; }
     }
 
     {
         float init[] = {3}, goal[]={3,1};
-        Word* want[] = {one};
+        Word  want[] = {one};
         if (!search_and_display(init,len(init), goal,len(goal), want)) { return 1; }
     }
 
     {
         float init[] = {3}, goal[]={1/3.0f};
-        Word* want[] = {inv};
+        Word  want[] = {inv};
         if (!search_and_display(init,len(init), goal,len(goal), want)) { return 1; }
     }
 
     {
         float init[] = {3}, goal[]={2/3.0f};
-        Word* want[] = {inv,dup,add};
+        Word  want[] = {inv,dup,add};
         if (!search_and_display(init,len(init), goal,len(goal), want)) { return 1; }
     }
 
     {
         float goal[]={2};
-        Word* want[] = {one,dup,add};
+        Word  want[] = {one,dup,add};
         if (!search_and_display(NULL,0, goal,len(goal), want)) { return 1; }
     }
 
     {
         float goal[]={0.5};
-        Word* want[] = {one,dup,add,inv};
+        Word  want[] = {one,dup,add,inv};
         if (!search_and_display(NULL,0, goal,len(goal), want)) { return 1; }
     }
 
