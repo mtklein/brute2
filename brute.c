@@ -23,8 +23,8 @@ static float* zero(float* sp) {                             *sp++ =   0;        
 static float*  one(float* sp) {                             *sp++ =   1;            return sp; }
 static float*  inv(float* sp) { float x = *--sp;            *sp++ = 1/x;            return sp; }
 
-static bool eval(Word words[], const float init[], int ninit
-                              , const float goal[], int ngoal) {
+static bool eval(Word word[], const float init[], int ninit
+                            , const float goal[], int ngoal) {
     float stack[64] = {0};
     float* const start = stack + 2;
 
@@ -33,7 +33,7 @@ static bool eval(Word words[], const float init[], int ninit
         *sp++ = *init++;
     }
 
-    for (Word word; (word = *words++); sp = word(sp)) {
+    for (Word w; (w = *word++); sp = w(sp)) {
         if (sp < start || sp > stack+len(stack)) {
             return false;
         }
@@ -50,9 +50,9 @@ static bool eval(Word words[], const float init[], int ninit
 static bool search(Word        dict[], const int ndict,
                    const float init[], const int ninit,
                    const float goal[], const int ngoal,
-                   Word       words[], const int nwords) {
-    const int max = nwords-1;
-    words[max] = NULL;
+                   Word        word[], const int nword) {
+    const int max = nword-1;
+    word[max] = NULL;
 
     intmax_t limit = 1;
     for (int i = 0; i < max; i++) {
@@ -61,11 +61,11 @@ static bool search(Word        dict[], const int ndict,
 
     for (intmax_t index = 0; index < limit; index++) {
         for (intmax_t i = 0, ix = index; i < max; i++) {
-            words[i] = dict[ix % ndict];
+            word[i] = dict[ix % ndict];
             ix /= ndict;
         }
 
-        if (eval(words, init,ninit, goal,ngoal)) {
+        if (eval(word, init,ninit, goal,ngoal)) {
             return true;
         }
     }
@@ -77,24 +77,24 @@ static bool search_and_display(const float init[], const int ninit,
                                const float goal[], const int ngoal,
                                Word        want[]) {
     Word dict[] = { NULL, mul, sub, add, div, dup, swap, zero, one, inv };
-    Word words[16];
+    Word word[16];
 
     bool ok = search(dict, len(dict),
                      init, ninit,
                      goal, ngoal,
-                    words, len(words));
+                     word, len(word));
     if (ok) {
         if (want) {
-            for (Word* word = words; *word; word++) {
-                if (*word != *want++) {
+            for (Word* w = word; *w; w++) {
+                if (*w != *want++) {
                     return false;
                 }
             }
         }
 
         FILE* const out = want ? stdout : stderr;
-        for (Word* word = words; *word; word++) {
-            void* addr = (void*)*word;
+        for (Word* w = word; *w; w++) {
+            void* addr = (void*)*w;
             Dl_info info;
             if (dladdr(addr, &info) && addr == info.dli_saddr) {
                 fprintf(out, "%s ", info.dli_sname);
@@ -160,13 +160,13 @@ int main(void) {
     }
 
     {
-        float goal[]={2};
+        float goal[] = {2};
         Word  want[] = {one,dup,add};
         if (!search_and_display(NULL,0, goal,len(goal), want)) { return 1; }
     }
 
     {
-        float goal[]={0.5};
+        float goal[] = {0.5};
         Word  want[] = {one,dup,add,inv};
         if (!search_and_display(NULL,0, goal,len(goal), want)) { return 1; }
     }
