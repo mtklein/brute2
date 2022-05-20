@@ -145,7 +145,7 @@ int main(void) {
         expect(dup,mul);
     }
 
-    {   // TODO: this is making use of the zeros before the start of the stack
+    {   // TODO: this is making use of underflow to let mul act as drop
         float init[] = {3}, goal[]={1};
         expect(mul,one);
     }
