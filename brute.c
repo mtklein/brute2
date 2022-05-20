@@ -22,13 +22,13 @@ static float* zero(float *sp) {                             *sp++ =   0;        
 static float*  one(float *sp) {                             *sp++ =   1;            return sp; }
 static float*  inv(float *sp) { float x = *--sp;            *sp++ = 1/x;            return sp; }
 
-static bool eval(Word word[], float const init[], float const *iend
-                            , float const goal[], float const *gend) {
+static bool eval(Word word[], float const init[], float const *init_end
+                            , float const goal[], float const *goal_end) {
     float stack[64] = {0};
     float* const start = stack + 2;
 
     float *sp = start;
-    while (init != iend) {
+    while (init != init_end) {
         *sp++ = *init++;
     }
 
@@ -38,7 +38,7 @@ static bool eval(Word word[], float const init[], float const *iend
         }
     }
 
-    for (float const *gp = gend; gp != goal;) {
+    for (float const *gp = goal_end; gp != goal;) {
         if (!equiv(*--sp, *--gp)) {
             return false;
         }
@@ -46,20 +46,20 @@ static bool eval(Word word[], float const init[], float const *iend
     return sp == start;
 }
 
-static bool step(Word const dict[], Word const *dend,
-                 Word const word[], Word       *wend) {
-    if (wend == word) {
+static bool step(Word const dict[], Word const *dict_end,
+                 Word const word[], Word       *word_end) {
+    if (word_end == word) {
         return false;
     }
-    Word* w = wend-1;
+    Word* w = word_end-1;
 
-    for (Word const *d = dict; d != dend; d++) {
+    for (Word const *d = dict; d != dict_end; d++) {
         if (*w == *d) {
             Word const *next = d+1;
 
-            if (next == dend) {
+            if (next == dict_end) {
                 *w = *dict;
-                return step(dict,dend, word,wend-1);
+                return step(dict,dict_end, word,word_end-1);
             } else {
                 *w = *next;
                 return true;
@@ -69,9 +69,9 @@ static bool step(Word const dict[], Word const *dend,
     __builtin_unreachable();
 }
 
-static bool search(Word  const dict[], Word  const *dend,
-                   float const init[], float const *iend,
-                   float const goal[], float const *gend,
+static bool search(Word  const dict[], Word  const *dict_end,
+                   float const init[], float const *init_end,
+                   float const goal[], float const *goal_end,
                    Word        word[], int   const words) {
     for (int len = 1; len < words-1; len++) {
         for (Word *w = word; w != word+len;) {
@@ -79,8 +79,8 @@ static bool search(Word  const dict[], Word  const *dend,
         }
         word[len] = NULL;
 
-        while (step(dict,dend, word,word+len)) {
-            if (eval(word, init,iend, goal,gend)) {
+        while (step(dict,dict_end, word,word+len)) {
+            if (eval(word, init,init_end, goal,goal_end)) {
                 return true;
             }
         }
@@ -88,15 +88,15 @@ static bool search(Word  const dict[], Word  const *dend,
     return false;
 }
 
-static bool test(float const init[], float const *iend,
-                 float const goal[], float const *gend,
+static bool test(float const init[], float const *init_end,
+                 float const goal[], float const *goal_end,
                  Word  const want[]) {
     Word const dict[] = { mul, sub, add, div, dup, swap, zero, one, inv };
     Word word[16];
 
     if (!search(dict, end(dict),
-                init, iend,
-                goal, gend,
+                init, init_end,
+                goal, goal_end,
                 word, len(word))) {
         return false;
     }
