@@ -33,7 +33,7 @@ static bool eval(Word word[], float const init[], float const *iend
     }
 
     for (Word w; (w = *word++); sp = w(sp)) {
-        if (sp < start || sp > end(stack)) {
+        if (sp <= start || sp > end(stack)) {
             return false;
         }
     }
@@ -146,9 +146,9 @@ int main(void) {
         expect(dup,mul);
     }
 
-    {   // TODO: this is making use of underflow to let mul act as drop
+    {
         float init[] = {3}, goal[]={1};
-        expect(mul,one);
+        expect(dup,div);
     }
 
     {
