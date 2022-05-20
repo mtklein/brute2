@@ -3,6 +3,7 @@
 #include <stdio.h>
 
 #define len(arr) (int)(sizeof(arr) / sizeof(*arr))
+#define end(arr) (arr + len(arr))
 
 static bool equiv(float x, float y) {
     return (x <= y && y <= x)
@@ -32,7 +33,7 @@ static bool eval(Word word[], float const init[], float const *iend
     }
 
     for (Word w; (w = *word++); sp = w(sp)) {
-        if (sp < start || sp > stack+len(stack)) {
+        if (sp < start || sp > end(stack)) {
             return false;
         }
     }
@@ -93,7 +94,7 @@ static bool test(float const init[], float const *iend,
     Word const dict[] = { mul, sub, add, div, dup, swap, zero, one, inv };
     Word word[16];
 
-    if (!search(dict, dict+len(dict),
+    if (!search(dict, end(dict),
                 init, iend,
                 goal, gend,
                 word, len(word))) {
@@ -122,7 +123,7 @@ static bool test(float const init[], float const *iend,
 }
 
 #define expect(...) \
-    if (!test(init,init+len(init), goal,goal+len(goal), (Word[]){__VA_ARGS__})) return 1
+    if (!test(init,end(init), goal,end(goal), (Word[]){__VA_ARGS__})) return 1
 
 int main(void) {
     {
