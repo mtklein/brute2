@@ -72,8 +72,8 @@ static bool step(Word const dict[], Word const *dict_end,
 static bool search(Word  const dict[], Word  const *dict_end,
                    float const init[], float const *init_end,
                    float const goal[], float const *goal_end,
-                   Word        word[], int   const words) {
-    for (int len = 1; len < words-1; len++) {
+                   Word        word[], int   const  word_len) {
+    for (int len = 1; len < word_len-1; len++) {
         for (Word *w = word; w != word+len;) {
             *w++ = *dict;
         }
