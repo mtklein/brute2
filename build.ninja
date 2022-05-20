@@ -14,6 +14,9 @@ rule link
 rule run
     command = ./$in > $out
 
+rule iwyu
+    command = include-what-you-use $in 2>&1 | grep -q "has correct" && touch $out
+
 build out/brute.o:  compile  brute.c
 build out/brute:    link out/brute.o
 build out/brute.ok: run  out/brute
@@ -24,3 +27,5 @@ build out/asan:    link out/asan.o
     cc = $asan
 build out/asan.ok: run out/asan
     cc = $asan
+
+build out/iwyu.ok: iwyu brute.c
