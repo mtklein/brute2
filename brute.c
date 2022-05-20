@@ -79,11 +79,11 @@ static bool search(Word  const dict[], Word  const *dict_end,
         }
         word[len] = NULL;
 
-        while (step(dict,dict_end, word,word+len)) {
+        do {
             if (eval(word, init,init_end, goal,goal_end)) {
                 return true;
             }
-        }
+        } while (step(dict,dict_end, word,word+len));
     }
     return false;
 }
@@ -129,6 +129,16 @@ int main(void) {
     {
         float init[] = {2,3,4}, goal[]={2,7};
         expect(add);
+    }
+
+    {
+        float init[] = {2,3,4}, goal[]={2,12};
+        expect(mul);
+    }
+
+    {
+        float init[] = {2,3,4}, goal[]={24};
+        expect(mul,mul);
     }
 
     {
