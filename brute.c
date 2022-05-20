@@ -45,19 +45,22 @@ static bool eval(Word word[], float const init[], int ninit
     return sp == start;
 }
 
-static bool step(Word const dict[], int const ndict, Word *word, int nword) {
-    if (nword == 0) {
+static bool step(Word const dict[], Word const *dend,
+                 Word const word[], Word       *wend) {
+    if (wend == word) {
         return false;
     }
-    for (Word const *d = dict; d != dict+ndict; d++) {
-        if (*word == *d) {
+    Word* w = wend-1;
+
+    for (Word const *d = dict; d != dend; d++) {
+        if (*w == *d) {
             Word const *next = d+1;
 
-            if (next == dict+ndict) {
-                *word = *dict;
-                return step(dict,ndict, word-1,nword-1);
+            if (next == dend) {
+                *w = *dict;
+                return step(dict,dend, word,wend-1);
             } else {
-                *word = *next;
+                *w = *next;
                 return true;
             }
         }
@@ -75,7 +78,7 @@ static bool search(Word  const dict[], int const ndict,
         }
         word[len] = NULL;
 
-        while (step(dict,ndict, word+len-1,len)) {
+        while (step(dict,dict+ndict, word,word+len)) {
             if (eval(word, init,ninit, goal,ngoal)) {
                 return true;
             }
