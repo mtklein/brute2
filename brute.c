@@ -1,10 +1,8 @@
 #include <dlfcn.h>
 #include <stdbool.h>
-#include <stddef.h>
-#include <stdint.h>
 #include <stdio.h>
 
-#define len(arr) (sizeof(arr) / sizeof(*arr))
+#define len(arr) (int)(sizeof(arr) / sizeof(*arr))
 
 static bool equiv(float x, float y) {
     return (x <= y && y <= x)
@@ -47,38 +45,49 @@ static bool eval(Word word[], float const init[], int ninit
     return sp == start;
 }
 
+static bool step(Word const dict[], int const ndict, Word *word, int nword) {
+    if (nword == 0) {
+        return false;
+    }
+    for (Word const *d = dict; d != dict+ndict; d++) {
+        if (*word == *d) {
+            Word const *next = d+1;
+
+            if (next == dict+ndict) {
+                *word = *dict;
+                return step(dict,ndict, word-1,nword-1);
+            } else {
+                *word = *next;
+                return true;
+            }
+        }
+    }
+    __builtin_unreachable();
+}
+
 static bool search(Word  const dict[], int const ndict,
                    float const init[], int const ninit,
                    float const goal[], int const ngoal,
                    Word        word[], int const nword) {
-    for (Word *w = word; w != word+nword;) {
-        *w++ = NULL;
-    }
-    int const max = nword-1;
-
-    intmax_t limit = 1;
-    for (int i = 0; i < max; i++) {
-        limit *= ndict;
-    }
-
-    for (intmax_t index = 0; index < limit; index++) {
-        for (intmax_t i = 0, ix = index; i < max; i++) {
-            word[i] = dict[ix % ndict];
-            ix /= ndict;
+    for (int len = 1; len < nword-1; len++) {
+        for (Word *w = word; w != word+len;) {
+            *w++ = *dict;
         }
+        word[len] = NULL;
 
-        if (eval(word, init,ninit, goal,ngoal)) {
-            return true;
+        while (step(dict,ndict, word+len-1,len)) {
+            if (eval(word, init,ninit, goal,ngoal)) {
+                return true;
+            }
         }
     }
-
     return false;
 }
 
 static bool test(float const init[], int const ninit,
                  float const goal[], int const ngoal,
                  Word  const want[]) {
-    Word const dict[] = { NULL, mul, sub, add, div, dup, swap, zero, one, inv };
+    Word const dict[] = { mul, sub, add, div, dup, swap, zero, one, inv };
     Word word[16];
 
     if (!search(dict, len(dict),
@@ -131,9 +140,9 @@ int main(void) {
         if (!test(init,len(init), goal,len(goal), (Word[]){dup,mul})) { return 1; }
     }
 
-    {
+    {   // TODO: this is making use of the zeros before the start of the stack
         float init[] = {3}, goal[]={1};
-        if (!test(init,len(init), goal,len(goal), (Word[]){dup,div})) { return 1; }
+        if (!test(init,len(init), goal,len(goal), (Word[]){mul,one})) { return 1; }
     }
 
     {
@@ -163,7 +172,7 @@ int main(void) {
 
     {
         float goal[] = {0.25};
-        if (!test(NULL,0, goal,len(goal), (Word[]){one,dup,add,inv,dup,mul})) { return 1; }
+        if (!test(NULL,0, goal,len(goal), (Word[]){one,dup,add,dup,mul,inv})) { return 1; }
     }
 
     return 0;
