@@ -21,13 +21,13 @@ static float* zero(float *sp) {                             *sp++ =   0;        
 static float*  one(float *sp) {                             *sp++ =   1;            return sp; }
 static float*  inv(float *sp) { float x = *--sp;            *sp++ = 1/x;            return sp; }
 
-static bool eval(Word word[], float const init[], int ninit
-                            , float const goal[], int ngoal) {
+static bool eval(Word word[], float const init[], float const *iend
+                            , float const goal[], float const *gend) {
     float stack[64] = {0};
     float* const start = stack + 2;
 
     float *sp = start;
-    while (ninit --> 0) {
+    while (init != iend) {
         *sp++ = *init++;
     }
 
@@ -37,7 +37,7 @@ static bool eval(Word word[], float const init[], int ninit
         }
     }
 
-    for (float const *gp = goal + ngoal; ngoal --> 0;) {
+    for (float const *gp = gend; gp != goal;) {
         if (!equiv(*--sp, *--gp)) {
             return false;
         }
@@ -68,18 +68,18 @@ static bool step(Word const dict[], Word const *dend,
     __builtin_unreachable();
 }
 
-static bool search(Word  const dict[], int const ndict,
-                   float const init[], int const ninit,
-                   float const goal[], int const ngoal,
-                   Word        word[], int const nword) {
-    for (int len = 1; len < nword-1; len++) {
+static bool search(Word  const dict[], Word  const *dend,
+                   float const init[], float const *iend,
+                   float const goal[], float const *gend,
+                   Word        word[], int   const words) {
+    for (int len = 1; len < words-1; len++) {
         for (Word *w = word; w != word+len;) {
             *w++ = *dict;
         }
         word[len] = NULL;
 
-        while (step(dict,dict+ndict, word,word+len)) {
-            if (eval(word, init,ninit, goal,ngoal)) {
+        while (step(dict,dend, word,word+len)) {
+            if (eval(word, init,iend, goal,gend)) {
                 return true;
             }
         }
@@ -87,15 +87,15 @@ static bool search(Word  const dict[], int const ndict,
     return false;
 }
 
-static bool test(float const init[], int const ninit,
-                 float const goal[], int const ngoal,
+static bool test(float const init[], float const *iend,
+                 float const goal[], float const *gend,
                  Word  const want[]) {
     Word const dict[] = { mul, sub, add, div, dup, swap, zero, one, inv };
     Word word[16];
 
-    if (!search(dict, len(dict),
-                init, ninit,
-                goal, ngoal,
+    if (!search(dict, dict+len(dict),
+                init, iend,
+                goal, gend,
                 word, len(word))) {
         return false;
     }
@@ -125,57 +125,57 @@ static bool test(float const init[], int const ninit,
 int main(void) {
     {
         float init[] = {2,3,4}, goal[]={2,7};
-        if (!test(init,len(init), goal,len(goal), (Word[]){add})) { return 1; }
+        if (!test(init,init+len(init), goal,goal+len(goal), (Word[]){add})) { return 1; }
     }
 
     {
         float init[] = {1,2,3}, goal[]={7};
-        if (!test(init,len(init), goal,len(goal), (Word[]){mul,add})) { return 1; }
+        if (!test(init,init+len(init), goal,goal+len(goal), (Word[]){mul,add})) { return 1; }
     }
 
     {
         float init[] = {3}, goal[]={6};
-        if (!test(init,len(init), goal,len(goal), (Word[]){dup,add})) { return 1; }
+        if (!test(init,init+len(init), goal,goal+len(goal), (Word[]){dup,add})) { return 1; }
     }
 
     {
         float init[] = {3}, goal[]={9};
-        if (!test(init,len(init), goal,len(goal), (Word[]){dup,mul})) { return 1; }
+        if (!test(init,init+len(init), goal,goal+len(goal), (Word[]){dup,mul})) { return 1; }
     }
 
     {   // TODO: this is making use of the zeros before the start of the stack
         float init[] = {3}, goal[]={1};
-        if (!test(init,len(init), goal,len(goal), (Word[]){mul,one})) { return 1; }
+        if (!test(init,init+len(init), goal,goal+len(goal), (Word[]){mul,one})) { return 1; }
     }
 
     {
         float init[] = {3}, goal[]={3,1};
-        if (!test(init,len(init), goal,len(goal), (Word[]){one})) { return 1; }
+        if (!test(init,init+len(init), goal,goal+len(goal), (Word[]){one})) { return 1; }
     }
 
     {
         float init[] = {3}, goal[]={1/3.0f};
-        if (!test(init,len(init), goal,len(goal), (Word[]){inv})) { return 1; }
+        if (!test(init,init+len(init), goal,goal+len(goal), (Word[]){inv})) { return 1; }
     }
 
     {
         float init[] = {3}, goal[]={2/3.0f};
-        if (!test(init,len(init), goal,len(goal), (Word[]){inv,dup,add})) { return 1; }
+        if (!test(init,init+len(init), goal,goal+len(goal), (Word[]){inv,dup,add})) { return 1; }
     }
 
     {
         float goal[] = {2};
-        if (!test(NULL,0, goal,len(goal), (Word[]){one,dup,add})) { return 1; }
+        if (!test(NULL,NULL, goal,goal+len(goal), (Word[]){one,dup,add})) { return 1; }
     }
 
     {
         float goal[] = {0.5};
-        if (!test(NULL,0, goal,len(goal), (Word[]){one,dup,add,inv})) { return 1; }
+        if (!test(NULL,NULL, goal,goal+len(goal), (Word[]){one,dup,add,inv})) { return 1; }
     }
 
     {
         float goal[] = {0.25};
-        if (!test(NULL,0, goal,len(goal), (Word[]){one,dup,add,dup,mul,inv})) { return 1; }
+        if (!test(NULL,NULL, goal,goal+len(goal), (Word[]){one,dup,add,dup,mul,inv})) { return 1; }
     }
 
     return 0;
